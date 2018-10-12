@@ -1,6 +1,0 @@
-E:\zzl\BMap\BMap.Core\ConsoleTest\bin\Debug\ConsoleTest.exe.config
-E:\zzl\BMap\BMap.Core\ConsoleTest\bin\Debug\ConsoleTest.exe
-E:\zzl\BMap\BMap.Core\ConsoleTest\bin\Debug\ConsoleTest.pdb
-E:\zzl\BMap\BMap.Core\ConsoleTest\obj\Debug\ConsoleTest.csproj.CoreCompileInputs.cache
-E:\zzl\BMap\BMap.Core\ConsoleTest\obj\Debug\ConsoleTest.exe
-E:\zzl\BMap\BMap.Core\ConsoleTest\obj\Debug\ConsoleTest.pdb

@@ -1,8 +1,0 @@
-E:\zzl\BMap\BMap.Core\BMap.Core\bin\Debug\netstandard1.6\BMap.Core.deps.json
-E:\zzl\BMap\BMap.Core\BMap.Core\bin\Debug\netstandard1.6\BMap.Core.dll
-E:\zzl\BMap\BMap.Core\BMap.Core\bin\Debug\netstandard1.6\BMap.Core.pdb
-E:\zzl\BMap\BMap.Core\BMap.Core\obj\Debug\netstandard1.6\BMap.Core.csprojResolveAssemblyReference.cache
-E:\zzl\BMap\BMap.Core\BMap.Core\obj\Debug\netstandard1.6\BMap.Core.csproj.CoreCompileInputs.cache
-E:\zzl\BMap\BMap.Core\BMap.Core\obj\Debug\netstandard1.6\BMap.Core.AssemblyInfo.cs
-E:\zzl\BMap\BMap.Core\BMap.Core\obj\Debug\netstandard1.6\BMap.Core.dll
-E:\zzl\BMap\BMap.Core\BMap.Core\obj\Debug\netstandard1.6\BMap.Core.pdb
