@@ -1,0 +1,6 @@
+E:\zzl\BMap\BMap.Core\obj\Debug\BMap.Core.csproj.CoreCompileInputs.cache
+E:\zzl\BMap\BMap.Core\bin\Debug\BMap.Core.dll
+E:\zzl\BMap\BMap.Core\bin\Debug\BMap.Core.pdb
+E:\zzl\BMap\BMap.Core\obj\Debug\BMap.Core.dll
+E:\zzl\BMap\BMap.Core\obj\Debug\BMap.Core.pdb
+E:\zzl\BMap\BMap.Core\obj\Debug\BMap.Core.csprojAssemblyReference.cache

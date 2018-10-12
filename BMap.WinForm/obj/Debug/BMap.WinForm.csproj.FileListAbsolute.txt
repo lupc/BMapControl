@@ -1,0 +1,13 @@
+E:\zzl\BMap\BMap.WinForm\bin\Debug\BMap.WinForm.pdb
+E:\zzl\BMap\BMap.WinForm\bin\Debug\BMap.Core.dll
+E:\zzl\BMap\BMap.WinForm\bin\Debug\BMap.Core.pdb
+E:\zzl\BMap\BMap.WinForm\obj\Debug\BMap.WinForm.BMapControl.resources
+E:\zzl\BMap\BMap.WinForm\obj\Debug\BMap.WinForm.Properties.Resources.resources
+E:\zzl\BMap\BMap.WinForm\obj\Debug\BMap.WinForm.csproj.GenerateResource.cache
+E:\zzl\BMap\BMap.WinForm\obj\Debug\BMap.WinForm.csproj.CoreCompileInputs.cache
+E:\zzl\BMap\BMap.WinForm\obj\Debug\BMap.WinForm.csproj.CopyComplete
+E:\zzl\BMap\BMap.WinForm\obj\Debug\BMap.WinForm.pdb
+E:\zzl\BMap\BMap.WinForm\bin\Debug\BMap.WinForm.dll.config
+E:\zzl\BMap\BMap.WinForm\bin\Debug\BMap.WinForm.dll
+E:\zzl\BMap\BMap.WinForm\obj\Debug\BMap.WinForm.dll
+E:\zzl\BMap\BMap.WinForm\obj\Debug\BMap.WinForm.csprojAssemblyReference.cache
