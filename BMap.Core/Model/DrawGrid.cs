@@ -25,6 +25,10 @@ namespace BMap.Core.Model
         /// </summary>
         public PointInt LeftTop { get; set; }
         /// <summary>
+        /// 右下角坐标
+        /// </summary>
+        public PointInt RightBottom { get; set; }
+        /// <summary>
         /// 单格大小
         /// </summary>
         public SizeInt GridSize { get; set; }

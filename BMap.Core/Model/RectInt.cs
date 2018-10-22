@@ -27,6 +27,9 @@ namespace BMap.Core.Model
         {
             From(lefttop, width, height);
         }
+
+      
+
         /// <summary>
         /// 
         /// </summary>
@@ -92,6 +95,26 @@ namespace BMap.Core.Model
         public bool Contains(PointInt pt)
         {
             return this.Contains(pt.X, pt.Y);
+        }
+
+        public bool Contains(RectInt rect)
+        {
+            bool b = false;
+
+            if (rect!=null)
+            {
+                b = this.LeftTop.X <= rect.LeftTop.X 
+                    && this.LeftTop.Y <= rect.LeftTop.Y 
+                    && this.RightBottom.X >= rect.RightBottom.X 
+                    && this.RightBottom.Y >= rect.RightBottom.Y;
+            }
+
+            return b;
+        }
+
+        public void OffSet(int x,int y)
+        {
+            this.LeftTop.Offset(x, y);
         }
 
         public override bool Equals(object obj)

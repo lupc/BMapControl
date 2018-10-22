@@ -205,5 +205,83 @@ namespace BMap.WinForm
             }
         }
 
+        /// <summary>
+        /// 把图片缩放拉伸到指定大小
+        /// </summary>
+        /// <param name="SourceImage"></param>
+        /// <param name="TargetWidth"></param>
+        /// <param name="TargetHeight"></param>
+        /// <returns></returns>
+        public static Bitmap ZoomPicture(Image SourceImage, int TargetWidth, int TargetHeight)
+        {
+            //int IntWidth; //新的图片宽
+            //int IntHeight; //新的图片高
+            try
+            {
+                System.Drawing.Imaging.ImageFormat format = SourceImage.RawFormat;
+                System.Drawing.Bitmap SaveImage = new System.Drawing.Bitmap(TargetWidth, TargetHeight);
+                Graphics g = Graphics.FromImage(SaveImage);
+                g.Clear(Color.Gray);
+
+
+                //if (SourceImage.Width > TargetWidth && SourceImage.Height <= TargetHeight)//宽度比目的图片宽度大，长度比目的图片长度小
+                //{
+                //    IntWidth = TargetWidth;
+                //    IntHeight = (IntWidth * SourceImage.Height) / SourceImage.Width;
+                //}
+                //else if (SourceImage.Width <= TargetWidth && SourceImage.Height > TargetHeight)//宽度比目的图片宽度小，长度比目的图片长度大
+                //{
+                //    IntHeight = TargetHeight;
+                //    IntWidth = (IntHeight * SourceImage.Width) / SourceImage.Height;
+                //}
+                //else if (SourceImage.Width <= TargetWidth && SourceImage.Height <= TargetHeight) //长宽比目的图片长宽都小
+                //{
+                //    IntHeight = SourceImage.Width;
+                //    IntWidth = SourceImage.Height;
+                //}
+                //else//长宽比目的图片的长宽都大
+                //{
+                //    IntWidth = TargetWidth;
+                //    IntHeight = (IntWidth * SourceImage.Height) / SourceImage.Width;
+                //    if (IntHeight > TargetHeight)//重新计算
+                //    {
+                //        IntHeight = TargetHeight;
+                //        IntWidth = (IntHeight * SourceImage.Width) / SourceImage.Height;
+                //    }
+                //}
+
+                g.DrawImage(SourceImage, 0, 0, TargetWidth, TargetHeight);
+                //SourceImage.Dispose();
+
+                return SaveImage;
+            }
+            catch (Exception ex)
+            {
+
+            }
+
+            return null;
+        }
+
+        public static Bitmap ScaleImage(Image img,float scaleX,float scaleY)
+        {
+            Bitmap bm = null;
+            if (img!=null&&scaleX>0&&scaleY>0)
+            {
+                int oldWidth = img.Width;
+                int oldHeight = img.Height;
+                int newWidht = (int)Math.Round(oldWidth * scaleX);
+                int newHeight = (int)Math.Round(oldHeight *scaleY);
+                bm = new Bitmap(newWidht, newHeight);
+                using (var g = Graphics.FromImage(bm))
+                {
+                    g.DrawImage(img, new Rectangle(0, 0, newWidht, newHeight), new Rectangle(0, 0, oldWidth, oldHeight), GraphicsUnit.Pixel);
+                }
+
+            }
+
+            return bm;
+        }
+
     }
 }

@@ -102,7 +102,7 @@ namespace BMap.Core.Model
                 _fastLock.AcquireReaderLock(100);
                 try
                 {
-                    ReadTime = DateTime.Now;
+                    //ReadTime = DateTime.Now;
                     return _tileImg;
                 }
                 finally
@@ -117,10 +117,10 @@ namespace BMap.Core.Model
                     if (_tileImg!=value)
                     {
                         _tileImg = value;
-                        if (_tileImg!=null)
-                        {
-                            CreateTime = DateTime.Now;
-                        }
+                        //if (_tileImg!=null)
+                        //{
+                        //    CreateTime = DateTime.Now;
+                        //}
                     }
                    
                 }
@@ -144,6 +144,14 @@ namespace BMap.Core.Model
         /// </summary>
         public DateTime DrawTime { get; set; }
 
+        /// <summary>
+        /// 瓦片转态
+        /// </summary>
+        public TileState State { get; set; } = TileState.New;
+        /// <summary>
+        /// 错误信息
+        /// </summary>
+        public string ErrorMsg { get; set; }
 
 
         //public Image MyProperty { get; set; }
@@ -179,5 +187,15 @@ namespace BMap.Core.Model
         {
             return string.Format("X:{0},Y:{1},Zoom:{2}",TileIndex.X, TileIndex.Y, Zoom);
         }
+    }
+
+    public enum TileState
+    {
+        New=0,
+        Manage,
+        Loading,
+        LoadSuccess,
+        LoadFail,
+    
     }
 }

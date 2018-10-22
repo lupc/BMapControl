@@ -30,12 +30,16 @@ namespace WinformTest
             //PointInt lineB = new PointInt(10, 10);
             //PointInt pM = new PointInt(2, 1);
             //var n = BMap.Core.MapHelper.JudgePointToLine(lineA, lineB, pM);
-            var bs =File.ReadAllBytes("Map\\13\\6676\\3553.jpg");
+            var imgPath = "Map\\12\\3336\\1775.jpg";
+            var bs =File.ReadAllBytes(imgPath);
+            
+            
             DateTime dt = DateTime.Now;
             for (int i = 0; i < 100; i++)
             {
-                //var img = ImageHelper.BytesToImage(bs);
-                var img = Image.FromFile("Map\\13\\6676\\3553.jpg");
+                var img = ImageHelper.BytesToImage(bs);
+                //var img = Image.FromFile(imgPath);
+                //Bitmap bm = new Bitmap(imgPath);
             }
 
             var ts = DateTime.Now - dt;

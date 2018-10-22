@@ -48,6 +48,6 @@ namespace BMap.Core.Model
             return string.Format("X:{0},Y:{1}", X, Y);
         }
 
-      
+        
     }
 }

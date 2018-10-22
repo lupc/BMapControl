@@ -92,5 +92,16 @@ namespace BMap.Core.Model
         {
             return this.Contains(pt.X, pt.Y);
         }
+
+        public override bool Equals(object obj)
+        {
+            bool b = false;
+            RectInt64 rect = obj as RectInt64;
+            if (rect!=null)
+            {
+                b = rect.LeftTop.Equals(this.LeftTop) && rect.Width == this.Width && rect.Height == this.Height;
+            }
+            return b;
+        }
     }
 }

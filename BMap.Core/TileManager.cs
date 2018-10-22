@@ -44,7 +44,11 @@ namespace BMap.Core
         /// <summary>
         /// 最大个数
         /// </summary>
-        public int MaxCount { get; set; } = 200;
+        public int MaxCount { get; set; } = 256;
+        /// <summary>
+        /// 地图中心瓦片
+        /// </summary>
+        public Tile CenterTile { get; set; }
         public List<TileImgLoaderBase> TileLoaders
         {
             get { return _tileLoaders; }
@@ -69,9 +73,9 @@ namespace BMap.Core
         }
 
         /// <summary>
-        /// 瓦片添加到管理器中触发
+        /// 刷新瓦片事件
         /// </summary>
-        public event Action<Tile> TileAdded;
+        public event Action<Tile> RefreshTile;
 
        
         private void DelTileByThread(object o)
@@ -84,7 +88,8 @@ namespace BMap.Core
                     {
                         TilesFastLock.AcquireWriterLock(_lockTimeOut);
                         //定时删掉不是最近读取的瓦片
-                        var lst = lstTile.OrderByDescending(t => t.DrawTime).ToList();
+                        var lst = lstTile.OrderByDescending(t => t.ReadTime).ToList();
+                        //var lst = lstTile;
                         //for (int i = lstTile.Count-1; i >= MaxCount; i--)
                         //{
                         //    RemoveTile(lstTile[i]);
@@ -120,10 +125,20 @@ namespace BMap.Core
             {
                 _tileLoaders[i].Add(t);
             }
+            else
+            {
+                t.State = TileState.LoadFail;
+            }
         }
         private void Loader_LoadCompleted(TileImgLoaderBase arg1, Tile t)
         {
+            t.State = TileState.LoadSuccess;
+            if (RefreshTile != null)
+            {
+                RefreshTile(t);
+            }
             AddTile(t);
+            CacheTile(t);
             //Debug.WriteLine(arg1.ToString() + "加载瓦片成功");
         }
 
@@ -136,7 +151,7 @@ namespace BMap.Core
         /// <param name="zoom"></param>
         /// <param name="p"></param>
         /// <returns></returns>
-        public Tile GetTileNoLock(int zoom,PointInt64 tileIndex,bool ifNotExitsLoad=true)
+        public Tile GetTileNoLock(int zoom,PointInt64 tileIndex)
         {
             Tile t = null;
             Dictionary<PointInt64, Tile> dic1;
@@ -149,15 +164,17 @@ namespace BMap.Core
                 dic1 = new Dictionary<PointInt64, Tile>();
                 dicTile.Add(zoom, dic1);
             }
-            if (t==null)
-            {
-                //瓦片不存在则添加到加载器中
-                t = new Tile(tileIndex, zoom);
-                if (ifNotExitsLoad)
-                {
-                    LoadTile(t);
-                }
-            }
+            //if (t==null)
+            //{
+            //    //瓦片不存在则添加到加载器中
+            //    t = new Tile(tileIndex, zoom);
+            //    //AddTile(t);
+            //    if (ifNotExitsLoad)
+            //    {
+            //        LoadTile(t);
+            //    }
+            //}
+            //t.ReadTime = DateTime.Now;
             return t;
         }
         /// <summary>
@@ -166,13 +183,13 @@ namespace BMap.Core
         /// <param name="zoom"></param>
         /// <param name="p"></param>
         /// <returns></returns>
-        public Tile GetTile(int zoom,PointInt64 tileIndex,bool ifNotExitsLoad = true)
+        public Tile GetTile(int zoom,PointInt64 tileIndex)
         {
-            Tile t = new Tile(tileIndex, zoom); ;
+            Tile t = null; 
             TilesFastLock.AcquireReaderLock(_lockTimeOut);
             try
             {
-                t = GetTileNoLock(zoom, tileIndex,ifNotExitsLoad);
+                t = GetTileNoLock(zoom, tileIndex);
             }
             finally
             {
@@ -188,12 +205,21 @@ namespace BMap.Core
         /// <param name="ifExitsUpdate">如果存在则更新</param>
         public void AddTile(Tile t,bool ifExitsUpdate=true)
         {
-            TilesFastLock.AcquireWriterLock(_lockTimeOut);
-            var dt = DateTime.Now;
+            TilesFastLock.AcquireWriterLock(-1);
+            //var dt = DateTime.Now;
             try
             {
                 if (t!=null)
                 {
+                    //超过存储最大值 删掉最后一个
+                    //if (lstTile.Count>=MaxCount)
+                    //{
+                    //    var lastTile = lstTile.OrderBy(a => a.DrawTime).First();
+                    //    RemoveTile(lastTile);
+                    //}
+                    
+
+
                     Dictionary<PointInt64, Tile> dic1;
                     if (dicTile.ContainsKey(t.Zoom))
                     {
@@ -207,21 +233,18 @@ namespace BMap.Core
                     if (!dic1.ContainsKey(t.TileIndex))
                     {
                         dic1.Add(t.TileIndex, t);
+                        lstTile.Add(t);
                     }
                     else if(ifExitsUpdate)
                     {
                         dic1[t.TileIndex] = t;
                     }
-                    lstTile.Add(t);
-
+                    t.State = TileState.Manage;
+                    //t.CreateTime = DateTime.Now;
                     //添加到缓存中
-                    foreach (var loader in _tileLoaders)
-                    {
-                        if (loader.IsCache)
-                        {
-                            loader.CacheTile(t);
-                        }
-                    }
+                    //CacheTile(t);
+
+                   
                 }
                 //Debug.WriteLine(string.Format("{0}  瓦片已经【{1}】添加到管理器！耗时（ms）:{2}",  DateTime.Now.ToString("HH:mm:ss.fff"), t,(DateTime.Now - dt).TotalMilliseconds));
 
@@ -230,10 +253,25 @@ namespace BMap.Core
             {
                 TilesFastLock.ReleaseWriterLock();
             }
-            if (TileAdded!=null)
-            {
-                TileAdded(t);
-            }
+           
+        }
+
+        /// <summary>
+        /// 缓存瓦片
+        /// </summary>
+        /// <param name="t"></param>
+        private void CacheTile(Tile t)
+        {
+            Action act = new Action(() => {
+                foreach (var loader in _tileLoaders)
+                {
+                    if (loader.IsCache)
+                    {
+                        loader.CacheTile(t);
+                    }
+                }
+            });
+            act.BeginInvoke(null, null);
         }
 
         public void RemoveTile(Tile t)
@@ -247,7 +285,7 @@ namespace BMap.Core
                 {
                     dic1.Remove(t.TileIndex);
                 }
-                t = null;
+                //t = null;
             }
             finally
             {
@@ -262,15 +300,21 @@ namespace BMap.Core
         /// <param name="t"></param>
         public void LoadTile(Tile t)
         {
-            if (TileLoaders!=null&&TileLoaders.Count>0)
+            if (t.State!= TileState.Loading)
             {
-                var tileLoader1 = TileLoaders[0];
-                tileLoader1.Add(t);
+                if (TileLoaders != null && TileLoaders.Count > 0)
+                {
+                    var tileLoader1 = TileLoaders[0];
+                    t.State = TileState.Loading;
+                    tileLoader1.Add(t);
+                    
+                }
+                else
+                {
+                    Debug.WriteLine("没有找到瓦片加载器！");
+                }
             }
-            else
-            {
-                Debug.WriteLine("没有找到瓦片加载器！");
-            }
+            
         }
     }
 }

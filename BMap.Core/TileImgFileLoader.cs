@@ -59,6 +59,7 @@ namespace BMap.Core
                 }
                 catch (Exception ex)
                 {
+                    t.ErrorMsg = "本地加载失败：\r\n"+ex.Message;
                     Debug.WriteLine("从文件加载地图瓦片出错！" + ex.ToString());
                 }
                 finally

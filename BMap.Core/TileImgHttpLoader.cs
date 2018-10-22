@@ -18,6 +18,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Net;
 using System.Text;
+using System.Threading;
 using BMap.Core.Model;
 
 namespace BMap.Core
@@ -34,7 +35,7 @@ namespace BMap.Core
         public TileImgHttpLoader(string pathUrl)
         {
             PathUrl = pathUrl;
-            ThreadCount = 10;
+            ThreadCount = 20;
         }
         protected XRequest _httpReq = new XRequest();
         /// <summary>
@@ -48,6 +49,7 @@ namespace BMap.Core
             {
                 try
                 {
+                    //Thread.Sleep(1000);
                     if (LstLayer!=null&&LstLayer.Count>0)
                     {
                         //加载多图层合成
@@ -74,6 +76,7 @@ namespace BMap.Core
                 }
                 catch (Exception ex)
                 {
+                    t.ErrorMsg = "HTTP加载失败：\r\n"+ ex.Message;
                     Debug.WriteLine("从Http加载地图瓦片出错！" + ex.ToString());
                 }
             
@@ -127,6 +130,7 @@ namespace BMap.Core
                 {
                     if (ms != null && ms.Length > 0)
                     {
+                        Thread.Sleep(100);
                         img = Image.FromStream(ms);
                     }
 

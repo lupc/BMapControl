@@ -29,10 +29,9 @@ namespace WinformTest
         {
             TileManager.Singleton.TileLoaders = new List<TileImgLoaderBase>
             {
-                new TileImgFileLoader("map"){ Priority=999},
-                new GoogleChinaHybridTileLoader(){Priority = 9},
-                new TileImgHttpLoader("http://127.0.0.1:8888/map"){ Priority=1},
-                
+                //new TileImgFileLoader("map"){ Priority=999,ThreadCount=5},
+                new GoogleChinaHybridTileLoader(){Priority = 9,ThreadCount=10},
+                //new TileImgHttpLoader("http://127.0.0.1:8888/map"){ Priority=1},
             };
 
             this.bMapControl1.IsShowMapMsg = true;
@@ -66,7 +65,7 @@ namespace WinformTest
 
         private void button1_Click(object sender, EventArgs e)
         {
-            bMapControl1.RotationAngle += 20;
+            bMapControl1.RotationAngle += 30;
             button1.Text = bMapControl1.RotationAngle.ToString();
         }
     }

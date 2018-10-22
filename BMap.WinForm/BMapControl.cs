@@ -22,7 +22,7 @@ namespace BMap.WinForm
         public BMapControl()
         {
             ThreadPool.QueueUserWorkItem(RefreshByThread);
-            TileManager.Singleton.TileAdded += Singleton_TileAdded;
+            TileManager.Singleton.RefreshTile += Singleton_TileAdded;
             map.TilesUpdateComplete += Map_TilesUpdateComplete;
             
             InitializeComponent();
@@ -359,35 +359,6 @@ namespace BMap.WinForm
             {
                 try
                 {
-                    //List<DrawTile> lst = new List<DrawTile>();
-                    //lock (queTileToDeaw)
-                    //{
-                    //    while (queTileToDeaw.Count > 0)
-                    //    {
-                    //        lst.Add(queTileToDeaw.Dequeue());
-                    //    }
-                    //}
-
-                    //if (lst.Count>0)
-                    //{
-                    //    if (this.IsHandleCreated)
-                    //    {
-                    //        this.Invoke(new Action(() => {
-                    //            //DrawTilesToBitmap();
-                    //            using (var g = Graphics.FromImage(_allTilesBitmap))
-                    //            {
-                    //                foreach (var t in lst)
-                    //                {
-                    //                    DrawMapTiles(t, g, Point.Empty);
-                    //                }
-                    //            }
-                                
-                    //            Refresh();
-
-                    //            //_lastRefreshMousePoint = _lastMousePoint;
-                    //        }));
-                    //    }
-                    //}
 
                     if (_isNeedRefresh)
                     {
@@ -410,42 +381,24 @@ namespace BMap.WinForm
                 }
                 finally
                 {
-                    Thread.Sleep(100);//每隔100ms更新一次瓦片
+                    Thread.Sleep(200);//每隔100ms更新一次瓦片
                 }
             }
         }
         private void Map_TilesUpdateComplete(Dictionary<Tile,DrawTile> obj)
         {
-            //new Action(DrawTilesToBitmap).BeginInvoke(null, null);
-            DrawTilesToBitmap();
+            new Action(DrawTilesToBitmap).BeginInvoke(null, null);
+            //DrawTilesToBitmap();
         }
 
         //private Queue<DrawTile> queTileToDeaw = new Queue<DrawTile>();
         private void Singleton_TileAdded(Tile obj)
         {
-            
             if (obj != null)
             {
-                
                 var t = map.GetDrawTile(obj);
                 if (t != null)
                 {
-                    //lock (queTileToDeaw)
-                    //{
-                    //    queTileToDeaw.Enqueue(t);
-                    //}
-                    //lock (_bitmapLocker)
-                    //{
-                    //    if (_allTilesBitmap != null)
-                    //    {
-                    //        using (var g = Graphics.FromImage(_allTilesBitmap))
-                    //        {
-                    //            DrawMapTile(t, g,map.TilesArea.LeftTop.ToPoint());
-                    //            _isNeedRefresh = true;
-                    //        }
-                    //    }
-                    //}
-
                     if (this.IsHandleCreated)
                     {
                         this.Invoke(new Action(() =>
@@ -460,58 +413,37 @@ namespace BMap.WinForm
                             }
                         }));
                     }
-
-
-                    //if (this.IsHandleCreated)
-                    //{
-                    //    this.Invoke(new Action(() =>
-                    //    {
-                    //        //var dt = DateTime.Now;
-
-
-                    //        //Refresh();
-                    //        //只刷新单块瓦片区域
-                    //        if (RotationAngle == 0)
-                    //        {
-                    //            this.Invalidate(new Region(new RectangleF((float)(map.TilesArea.LeftTop.X + t.DrawPosition.X), (float)(map.TilesArea.LeftTop.Y + t.DrawPosition.Y), (float)map.TileSize.Width, (float)map.TileSize.Height)));
-                    //            this.Update();
-                    //        }
-                    //        else
-                    //            Refresh();
-                    //        Debug.WriteLine(string.Format("瓦片{0}绘制到bitmap中，耗时：{1}ms", obj, (DateTime.Now - dt).TotalMilliseconds));
-
-                    //    }));
-                    //}
-                    //this.Invalidate(new Rectangle((int)t.DrawPosition.X, (int)t.DrawPosition.Y, map.TileSize.Width, map.TileSize.Height));
-                    //this.Update();
                 }
             }
-            //if (this.IsHandleCreated)
-            //{
-
-            //    this.Invoke(new Action(() =>
-            //    {
-            //        DrawTilesToBitmap();
-            //        Refresh();
-            //    }));
-            //}
-            
+          
         }
 
+
+        RectInt _lastTilesArea = null;
         private void DrawTilesToBitmap()
         {
             lock (_bitmapLocker)
             {
                 swCreateBitmap.Restart();
-                //if (_allTilesBitmap != null)
+
+                //if (_allTilesBitmap==null)
                 //{
-                //    _allTilesBitmap.Dispose();
+
                 //}
-                if (map.TilesArea.Width > 0 && map.TilesArea.Height > 0)
+                //if (map.TilesArea != _lastTilesArea)
+                //{
+                //    if (map.RectTilesBitmap != null)
+                //    {
+                //        _allTilesBitmap = new Bitmap(map.RectTilesBitmap.Width, map.RectTilesBitmap.Height);
+                //    }
+                //    _lastTilesArea = map.TilesArea;
+                //}
+                if ( map.RectTilesBitmap != null)
                 {
-                    _allTilesBitmap = new Bitmap(map.TilesArea.Width, map.TilesArea.Height);
-                    //lock (_allTilesBitmap)
-                    //{
+                    _allTilesBitmap = new Bitmap(map.RectTilesBitmap.Width, map.RectTilesBitmap.Height);
+                }
+                if (_allTilesBitmap!=null)
+                {
                     using (var g = Graphics.FromImage(_allTilesBitmap))
                         {
                             g.SmoothingMode = SmoothingMode.HighSpeed;
@@ -528,7 +460,7 @@ namespace BMap.WinForm
                             }
 
                         }
-                    //    }
+
                 }
                 swCreateBitmap.Stop();
 
@@ -551,13 +483,25 @@ namespace BMap.WinForm
             {
                 var pen = new Pen(GridLineColor, GridLineWidth);
                 {
-                    for (int x = (int)map.GridInfo.LeftTop.X; x < map.GridInfo.XCount * map.GridInfo.GridSize.Width; x += map.GridInfo.GridSize.Width)
+                    //var rightBottom = new Point(map.GridInfo.XCount * map.GridInfo.GridSize.Width, map.GridInfo.YCount * map.GridInfo.GridSize.Height);
+                    //for (int x = (int)map.GridInfo.LeftTop.X; x <= rightBottom.X; x += map.GridInfo.GridSize.Width)
+                    //{
+                    //    g.DrawLine(pen, new Point(x, 0), new Point(x, rightBottom.Y));
+                    //}
+                    //for (int y = (int)map.GridInfo.LeftTop.Y; y <= rightBottom.Y; y += map.GridInfo.GridSize.Height)
+                    //{
+                    //    g.DrawLine(pen, new Point(0, y), new Point(rightBottom.X, y));
+                    //}
+
+                    //画竖线
+                    for (int x = 0; x <= _allTilesBitmap.Width; x+=map.TileSize.Width)
                     {
-                        g.DrawLine(pen, new Point(x, 0), new Point(x, map.TilesArea.Height));
+                        g.DrawLine(pen, new Point(x, 0), new Point(x, _allTilesBitmap.Height));
                     }
-                    for (int y = (int)map.GridInfo.LeftTop.Y; y < map.GridInfo.YCount * map.GridInfo.GridSize.Height; y += map.GridInfo.GridSize.Height)
+                    //画横线
+                    for (int y = 0; y <= _allTilesBitmap.Height; y+=map.TileSize.Height)
                     {
-                        g.DrawLine(pen, new Point(0, y), new Point(map.TilesArea.Width, y));
+                        g.DrawLine(pen, new Point(0, y), new Point(_allTilesBitmap.Width, y));
                     }
 
                     //g.DrawLine(pen, new Point(5, 5), new Point(50, 50));
@@ -574,11 +518,11 @@ namespace BMap.WinForm
         {
             map.TilesUpdateLock.AcquireReaderLock(200);
             
-            if (map.LstDrawTile != null)
+            if (map.DicDrawTile != null)
             {
                 //using (g)
                 {
-                    foreach (var rt in map.LstDrawTile.Values)
+                    foreach (var rt in map.DicDrawTile.Values)
                     {
                         
                             DrawMapTile(rt, g, Point.Empty);
@@ -596,7 +540,7 @@ namespace BMap.WinForm
         private void DrawMapTile(DrawTile rt,Graphics g,Point offset)
         {
 
-            if (rt !=null && rt.Tile != null && !rt.Tile.IsEmpty)
+            if (rt !=null )
             {
                 //var p = rt.DrawPosition.GetOffSet(0 - map.TilesArea.LeftTop.X, 0 - map.TilesArea.LeftTop.Y).ToPoint();
                 var p = rt.DrawPosition.ToPoint();//绘图位置
@@ -604,22 +548,40 @@ namespace BMap.WinForm
                 {
                     p.Offset(offset);
                 }
-                if (rt.Tile.TileImg != null )
-                {
 
-                    g.DrawImage(rt.Tile.TileImg, p);
-                    rt.Tile.DrawTime = DateTime.Now;
-                }
-                else
+                if (rt.Tile != null && !rt.Tile.IsEmpty)
                 {
-                    //没图片
-                    using (var f = new Font("宋体", 11))
+                    rt.Tile.DrawTime = DateTime.Now;
+                    //rt.Tile.DrawCount++;
+                    if (rt.Tile.TileImg!=null)
                     {
-                        p.X += 5;
-                        p.Y += 5;
-                        g.DrawString(rt.Tile.ToString(), f, new SolidBrush(GridLineColor), p);
+                        g.DrawImage(rt.Tile.TileImg, p);
+                        
                     }
+                    else
+                    {
+                        //没图片
+                        using (var f = new Font("宋体", 11))
+                        {
+                            p.X += 5;
+                            p.Y += 5;
+                            g.DrawString(rt.Tile.ToString(), f, new SolidBrush(GridLineColor), p);
+
+                            //if (rt.Tile.IsLoading)
+                            //{
+                            //    p.Offset(0, 30);
+                            //    g.DrawString("Loading...", f, new SolidBrush(GridLineColor), p);
+                            //}
+                            //else if (!string.IsNullOrWhiteSpace(rt.Tile.ErrorMsg))
+                            //{
+                            //    p.Offset(0, 30);
+                            //    g.DrawString(rt.Tile.ErrorMsg, f, new SolidBrush(Color.FromArgb(0x88, 0xff, 0, 0)), p);
+                            //}
+                        }
+                    }
+                    
                 }
+               
             }
 
         }
@@ -657,6 +619,8 @@ namespace BMap.WinForm
             var size = g.MeasureString(msg, msgFont);
             Point msgPoint = new Point(this.Width - (int)size.Width - 10, 5);
             DrawMsg(g, msgPoint, msg,msgFont,size);
+            //swCreateBitmap.Reset();
+            //_swRenser.Reset();
         }
 
         private void DrawMapMsg(Graphics g)
@@ -814,48 +778,57 @@ namespace BMap.WinForm
                 //{
 
 
-                    var g = e.Graphics;
-                    g.SmoothingMode = SmoothingMode.HighQuality;
-                    g.PixelOffsetMode = PixelOffsetMode.HighQuality;
-                    //整个地图控件GDI旋转
-                    if (RotationAngle != 0)
+                var g = e.Graphics;
+                g.SmoothingMode = SmoothingMode.HighQuality;
+                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                g.Clip = new Region(this.ClientRectangle);
+                g.CompositingQuality = CompositingQuality.HighQuality;
+
+                //整个地图控件GDI旋转
+                if (RotationAngle != 0)
+                {
+                    float transX = this.Width / 2;
+                    float transY = this.Height / 2;
+                    g.TranslateTransform(transX, transY);//屏幕中心旋转
+                    g.RotateTransform(RotationAngle);
+                    g.TranslateTransform(-transX, -transY);
+                    if (map.IsDragging)
                     {
-                        float transX = this.Width / 2;
-                        float transY = this.Height / 2;
-                        g.TranslateTransform(transX, transY);//屏幕中心旋转
-                        g.RotateTransform(RotationAngle);
-                        g.TranslateTransform(-transX, -transY);
-                        if (map.IsDragging )
-                        {
-                            g.TranslateTransform(_tileTranslate.X, _tileTranslate.Y);
-                        }
+                        g.TranslateTransform(_tileTranslate.X, _tileTranslate.Y);
                     }
+                }
 
 
+                //g.DrawImage(_allTilesBitmap, map.RectTilesBitmap.ToRectangle());
+                var srcRect = map.TilesArea.ToRectangle();
+                srcRect.Offset(new Point(-map.RectTilesBitmap.LeftTop.X, -map.RectTilesBitmap.LeftTop.Y));
+                lock (_bitmapLocker)
+                {
+                    g.DrawImage(_allTilesBitmap, map.TilesArea.ToRectangle(), srcRect, GraphicsUnit.Pixel);
 
+                }
 
-                g.DrawImage(_allTilesBitmap, map.TilesArea.ToRectangle());
-                    g.ResetTransform();
-                    
-                    DrawLaylers(g);
-                    if (UserDraw!=null)
-                    {
-                        UserDraw.Draw(this, g);
-                    }
+                g.ResetTransform();
 
-                    if (IsShowMapMsg)
-                    {
-                        DrawMapMsg(g);
-                    }
-                    _swRenser.Stop();
-                    if (IsShowRenderMsg)
-                    {
-                        DrawRenderMsg(g);
-                    }
-                    if (IsShowMapScale)
-                    {
-                        DrawMapScale(g);
-                    }
+                DrawLaylers(g);
+                if (UserDraw != null)
+                {
+                    UserDraw.Draw(this, g);
+                }
+
+                if (IsShowMapMsg)
+                {
+                    DrawMapMsg(g);
+                }
+                _swRenser.Stop();
+                if (IsShowRenderMsg)
+                {
+                    DrawRenderMsg(g);
+                }
+                if (IsShowMapScale)
+                {
+                    DrawMapScale(g);
+                }
                 //}
             }
         }
@@ -1002,7 +975,7 @@ namespace BMap.WinForm
                 {
                     _tileTranslate.Offset(-dx, -dy);
                 }
-                map.CenterOffSet(dx, dy, RotationAngle == 0);
+                map.CenterMove(dx, dy, RotationAngle == 0);
 
                 //}
                 //_isNeedRefresh = true;
@@ -1094,22 +1067,96 @@ namespace BMap.WinForm
             base.OnMouseUp(e);
         }
 
+        private float _bitmapScale = 0;
+        //private Point _bitmapOffSet;
         protected override void OnMouseWheel(MouseEventArgs e)
         {
             var rp = GetRotatedPoint(e.Location, -RotationAngle);
+            int scaleValue = 0;
             if (e.Delta > 0)
             {
+                scaleValue = 1;
+                //map.PointZoom(new PointInt(rp.X, rp.Y), 1);
 
-                map.PointZoom(new PointInt(rp.X, rp.Y), 1);
             }
             else if (e.Delta < 0)
             {
-                map.PointZoom(new PointInt(rp.X, rp.Y), -1);
+                scaleValue = -1;
+                //map.PointZoom(new PointInt(rp.X, rp.Y), -1);
             }
             //bMapScale1.Distance = MercatorHelper.GetResolution(Zoom, MapCenter.LatY) * bMapScale1.ScaleLen;
+
+            //ScaleTilesBitmap(scaleValue, rp);
+            //Refresh();
+            //Thread.Sleep(1000);
+            map.PointZoom(new PointInt(rp.X, rp.Y), scaleValue);
             Refresh();
             base.OnMouseWheel(e);
         }
+
+        //private void ScaleTilesBitmap(int scaleValue,Point p)
+        //{
+        //    int oldWidth = _allTilesBitmap.Width;
+        //    int oldHeight = _allTilesBitmap.Height;
+        //    var scale = (float)Math.Pow(2d, (double)scaleValue);
+
+        //    var p1 = p.GetOffSet(-map.RectTilesBitmap.LeftTop.X, -map.RectTilesBitmap.LeftTop.Y);
+
+        //    Bitmap screenBitmap = new Bitmap(this.Width, this.Height);
+        //    this.DrawToBitmap(screenBitmap, this.ClientRectangle);
+
+        //    var scaleBitmap = DrawHelper.ScaleImage(screenBitmap, scale,scale);
+        //    if (scaleBitmap != null)
+        //    {
+        //        var halfW = screenBitmap.Width / 2;
+        //        var halfSW = scaleBitmap.Width / 2;
+        //        var halfH = screenBitmap.Height / 2;
+        //        var halfSH = scaleBitmap.Height / 2;
+        //        Point offset = new Point();
+        //        offset.X = (int)(halfW - halfSW + (p1.X - halfW) - (p1.X - halfW) * scale);
+        //        offset.Y = (int)(halfH - halfSH + (p1.Y - halfH) - (p1.Y - halfH) * scale);
+
+        //        //offset.X = (int)(halfW - halfSW)-map.RectTilesBitmap.LeftTop.X;
+        //        //offset.Y = (int)(halfH - halfSH)- map.RectTilesBitmap.LeftTop.Y;
+
+        //        using (var g = Graphics.FromImage(_allTilesBitmap))
+        //        {
+        //            g.Clear(this.BackColor);
+        //            g.DrawImage(scaleBitmap, offset);
+        //        }
+        //    }
+        //    else
+        //        _allTilesBitmap = null;
+
+
+        //    //int newWidth = (int)(_allTilesBitmap.Width * scale);
+        //    //int newHeight = (int)(_allTilesBitmap.Height * scale);
+        //    ////var scaleBitmap = DrawHelper.ZoomPicture(this.bitmap, newWidth, newHeight);
+        //    //var scaleBitmap = new Bitmap((int)(this.Width ), (int)(this.Height));
+        //    //this.DrawToBitmap(scaleBitmap,this.ClientRectangle);
+        //    //scaleBitmap = DrawHelper.ZoomPicture(scaleBitmap, (int)(this.Width*scale), (int)(this.Height*scale));
+        //    //_bitmapOffSet = new Point( (int)((oldWidth -newWidth)*scale) + map.RectTilesBitmap.LeftTop.X, (int)((oldHeight - newHeight)*scale)+map.RectTilesBitmap.LeftTop.Y);
+        //    //_bitmapOffSet.Offset(this.Width / 2 - _allTilesBitmap.Width / 2 , this.Height / 2 - _allTilesBitmap.Height / 2 );
+        //    ////if (_bitmapScale > 0)
+        //    ////{
+        //    ////    _bitmapOffSet.Offset(-(p.X - _allTilesBitmap.Width / 2) , -(p.Y - _allTilesBitmap.Height / 2) );
+        //    ////}
+        //    ////else if (_bitmapScale < 0)
+        //    ////{
+        //    ////    _bitmapOffSet.Offset((p.X - this.Width / 2), (p.Y - this.Height / 2));
+        //    ////}
+        //    //using (var g = Graphics.FromImage(_allTilesBitmap))
+        //    //{
+        //    //    g.Clear(this.BackColor);
+        //    //    g.DrawImage(scaleBitmap, _bitmapOffSet);
+        //    //}
+
+          
+        //}
+        
+
+
+
         protected override void OnSizeChanged(EventArgs e)
         {
             map.ReSetMapSize(this.Width, this.Height);

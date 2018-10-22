@@ -126,8 +126,8 @@ namespace BMap.Core
                 }
                 else
                 {
-                    //autoResetEvent.WaitOne(2000);
-                    Thread.Sleep(111);
+                    autoResetEvent.WaitOne(2000);
+                    //Thread.Sleep(111);
                 }
             }
         }
@@ -170,7 +170,7 @@ namespace BMap.Core
         /// <returns></returns>
         protected Tile Dequeue()
         {
-            Tile t = Tile.Empty;
+            Tile t = null;
             lock (_queTile)
             {
                 if (_queTile.Count>0)

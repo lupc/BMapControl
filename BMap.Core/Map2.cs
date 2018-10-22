@@ -22,9 +22,9 @@ using System.Linq;
 
 namespace BMap.Core
 {
-    public class Map
+    public class Map2
     {
-        public Map()
+        public Map2()
         {
             TileSize = MercatorHelper.TileSize;
         }
@@ -189,7 +189,7 @@ namespace BMap.Core
         /// <summary>
         /// 瓦片合成大图矩形范围
         /// </summary>
-        public RectInt RectTilesBitmap { get; set; }
+        public RectInt RectTilesBitmap { get; set; };
 
 
         public event Action<Dictionary<Tile,DrawTile>> TilesUpdateComplete;
@@ -209,9 +209,8 @@ namespace BMap.Core
             _isNeedToUpdateTiles = true;
             //Debug.WriteLine(string.Format("****缩放：鼠标点:【{0}】,中心坐标点:【{1}】,中心像素点:【{2}】,鼠标像素点【{3}】，鼠标经纬度【{8}】，层级:【{4}】,屏幕中心点：【{5}】\r\n像素偏移{6},屏幕坐标点偏移{7}"));
 
-            if (RectTilesBitmap!=null && RectTilesBitmap.Contains(TilesArea) && RotationAngle==0)
+            if (RectTilesBitmap!=null && RectTilesBitmap.Contains(ScreenArea))
             {
-
                 RectTilesBitmap.OffSet(-(int)x, -(int)y);
             }
             else
@@ -345,7 +344,8 @@ namespace BMap.Core
             }
             return dt;
         }
-        
+
+        private RectInt64 _lastTilesRect = null;
         public void UpdateDrawTiles()
         {
             
@@ -353,114 +353,131 @@ namespace BMap.Core
             TilesUpdateLock.AcquireWriterLock(1000);
             try
             {
-
+                
                 if (ScreenArea != null)
                 {
-
-
-
+                    
+                   
+                    
 
                     var width = TilesArea.Width;
                     var height = TilesArea.Height;
 
-
+                    
 
                     var pointLeftTopPix = TileCenterPix.GetOffSet(-width / 2, -height / 2);//左上角像素坐标
                     var tileXYLeftTop = MercatorHelper.PixelToTileXY(pointLeftTopPix);//左上角的瓦片索引
                     var tilePixLeftTop = MercatorHelper.TileXYToPixel(tileXYLeftTop);//左上角瓦片像素坐标
-                    //var tileDrawPositionLeftTop = new PointInt((int)(tilePixLeftTop.X - pointLeftTopPix.X + 0.5), (int)(tilePixLeftTop.Y - pointLeftTopPix.Y + 0.5));//屏幕坐标系下左上角瓦片的屏幕坐标
-                    var tileDrawPositionLeftTop = TilesArea.LeftTop.GetOffSet((int)(tilePixLeftTop.X - pointLeftTopPix.X), (int)(tilePixLeftTop.Y - pointLeftTopPix.Y));
+                    var tileDrawPositionLeftTop = new PointInt((int)(tilePixLeftTop.X - pointLeftTopPix.X + 0.5), (int)(tilePixLeftTop.Y - pointLeftTopPix.Y + 0.5));//屏幕坐标系下左上角瓦片的屏幕坐标
+                    //var tileDrawPositionLeftTop = TilesArea.LeftTop.GetOffSet((int)(tilePixLeftTop.X - pointLeftTopPix.X), (int)(tilePixLeftTop.Y - pointLeftTopPix.Y));
 
                     var tileXYCenter = MercatorHelper.PixelToTileXY(TileCenterPix);//中心瓦片索引
                     //var tilePixCenter = MercatorHelper.TileXYToPixel(tileXYCenter);//中心瓦片左上角所在像素坐标
 
-                    var xCount = (int)Math.Ceiling((double)width / TileSize.Width) + 1;//X方向的瓦片数量
-                    var yCount = (int)Math.Ceiling((double)height / TileSize.Height) + 1;//Y方向的瓦片数量
+                    var xCount = (int)Math.Ceiling((double)width / TileSize.Width)+1;//X方向的瓦片数量
+                    var yCount = (int)Math.Ceiling((double)height / TileSize.Height)+1;//Y方向的瓦片数量
 
                     RectTilesBitmap = new RectInt(tileDrawPositionLeftTop, xCount * TileSize.Width, yCount * TileSize.Height);
-                    tileDrawPositionLeftTop = new PointInt(0, 0);
+                    var tilesRect = new RectInt64(tileXYLeftTop, xCount, yCount);
                     GridInfo = new DrawGrid
                     {
                         GridSize = TileSize,
-                        LeftTop = RectTilesBitmap.LeftTop,
-                        RightBottom = RectTilesBitmap.RightBottom,
+                        LeftTop = tileDrawPositionLeftTop,
                         XCount = xCount,
                         YCount = yCount,
                     };
 
-                    //计算要显示的绘图瓦片
-                    if (DicDrawTile == null)
+                    if (!tilesRect.Equals(_lastTilesRect))
                     {
-                        DicDrawTile = new Dictionary<Tile, DrawTile>();
-
-                    }
-                    DicDrawTile.Clear();
-
-                    var minTileIndex = MapHelper.GetTileMatrixMinXY(Zoom);
-                    var maxTileIndex = MapHelper.GetTileMatrixMaxXY(Zoom);
-                    List<Tile> lstWantToLoad = new List<Tile>();
-                    List<DrawTile> lstDrawTile = new List<DrawTile>();
-                    //DateTime rt = DateTime.Now;
-                    for (int x = 0; x < xCount; x++)
-                    {
-                        for (int y = 0; y < yCount; y++)
+                        //计算要显示的绘图瓦片
+                        if (DicDrawTile == null)
                         {
-                            var drawPostiton = tileDrawPositionLeftTop.GetOffSet(x * TileSize.Width, y * TileSize.Height);
-                            //Tile t = new Tile(tileXYLeftTop.X + x, tileXYLeftTop.Y + y, Zoom);
-                            Tile t = TileManager.Singleton.GetTile(Zoom, new PointInt64(tileXYLeftTop.X + x, tileXYLeftTop.Y + y));
-                            if (t == null)
-                            {
-                                t = new Tile(tileXYLeftTop.X + x, tileXYLeftTop.Y + y, Zoom);
-                            }
-                            if (t.TileIndex.X >= minTileIndex.Width && t.TileIndex.Y >= minTileIndex.Height
-                                && t.TileIndex.X <= maxTileIndex.Width && t.TileIndex.Y <= maxTileIndex.Height)//范围判断
-                            {
+                            DicDrawTile = new Dictionary<Tile, DrawTile>();
 
-                                var rt = new DrawTile()
+                        }
+                        DicDrawTile.Clear();
+                        
+                        var minTileIndex = MapHelper.GetTileMatrixMinXY(Zoom);
+                        var maxTileIndex = MapHelper.GetTileMatrixMaxXY(Zoom);
+                        List<Tile> lstWantToLoad = new List<Tile>();
+                        List<DrawTile> lstDrawTile = new List<DrawTile>();
+                        //DateTime rt = DateTime.Now;
+                        for (int x = 0; x < xCount; x++)
+                        {
+                            for (int y = 0; y < yCount; y++)
+                            {
+                                var drawPostiton = tileDrawPositionLeftTop.GetOffSet(x * TileSize.Width, y * TileSize.Height);
+                                //Tile t = new Tile(tileXYLeftTop.X + x, tileXYLeftTop.Y + y, Zoom);
+                                Tile t = TileManager.Singleton.GetTile(Zoom, new PointInt64(tileXYLeftTop.X + x, tileXYLeftTop.Y + y));
+                                if (t == null)
                                 {
-                                    DrawPosition = drawPostiton,
-                                    Tile = t
-                                };
-                                lstDrawTile.Add(rt);
-                                ////if (RotationAngle == 0 || MapHelper.CheckTileCrossRect(new RectInt(dt.DrawPosition.GetOffSet(TilesArea.LeftTop.X, TilesArea.LeftTop.Y), TileSize.Width, TileSize.Height), ScreenArea, RotationAngle))
-                                //{
-                                //    //DicDrawTile.Add(t, rt);
-                                //    lstDrawTile.Add(rt);
-                                //    //if (t.TileImg == null)
-                                //    //{
-                                //    //    lstWantToLoad.Add(t);
+                                    t = new Tile(tileXYLeftTop.X + x, tileXYLeftTop.Y + y, Zoom);
+                                }
+                                if (t.TileIndex.X >= minTileIndex.Width && t.TileIndex.Y >= minTileIndex.Height
+                                    && t.TileIndex.X <= maxTileIndex.Width && t.TileIndex.Y <= maxTileIndex.Height)//范围判断
+                                {
 
-                                //    //}
-                                //}
+                                    var rt = new DrawTile()
+                                    {
+                                        DrawPosition = drawPostiton,
+                                        Tile = t
+                                    };
+                                    lstDrawTile.Add(rt);
+                                    ////if (RotationAngle == 0 || MapHelper.CheckTileCrossRect(new RectInt(dt.DrawPosition.GetOffSet(TilesArea.LeftTop.X, TilesArea.LeftTop.Y), TileSize.Width, TileSize.Height), ScreenArea, RotationAngle))
+                                    //{
+                                    //    //DicDrawTile.Add(t, rt);
+                                    //    lstDrawTile.Add(rt);
+                                    //    //if (t.TileImg == null)
+                                    //    //{
+                                    //    //    lstWantToLoad.Add(t);
+
+                                    //    //}
+                                    //}
+                                }
                             }
                         }
-                    }
-                    lstDrawTile = lstDrawTile.OrderBy(d => Math.Abs(d.Tile.TileIndex.X - tileXYCenter.X) + Math.Abs(d.Tile.TileIndex.Y - tileXYCenter.Y)).ToList();
-                    foreach (var item in lstDrawTile)
-                    {
-                        if (item.Tile.State == TileState.New)
+                        lstDrawTile = lstDrawTile.OrderBy(d => Math.Abs(d.Tile.TileIndex.X - tileXYCenter.X) + Math.Abs(d.Tile.TileIndex.Y - tileXYCenter.Y)).ToList();
+                        foreach (var item in lstDrawTile)
                         {
-                            TileManager.Singleton.AddTile(item.Tile);
+                            if (item.Tile.State == TileState.New)
+                            {
+                                TileManager.Singleton.AddTile(item.Tile);
+                            }
+                            if (item.Tile.TileImg == null)
+                            {
+                                lstWantToLoad.Add(item.Tile);
+                            }
+                            item.Tile.ReadTime = DateTime.Now;
+                            DicDrawTile.Add(item.Tile, item);
                         }
-                        if (item.Tile.TileImg == null)
+
+                       
+
+                        lstWantToLoad.ForEach(a => { TileManager.Singleton.LoadTile(a); });
+
+                        _lastTilesRect = tilesRect;
+                        TileDrawOffset = new PointInt(0,0);
+
+                        if (TilesUpdateComplete != null)
                         {
-                            lstWantToLoad.Add(item.Tile);
+                            TilesUpdateComplete(DicDrawTile);
                         }
-                        item.Tile.ReadTime = DateTime.Now;
-                        DicDrawTile.Add(item.Tile, item);
+
                     }
+                    //else
+                    //{
+                    //    if (TileDrawOffset.X!=0&&TileDrawOffset.Y!=0)
+                    //    {
+                    //        foreach (var item in DicDrawTile)
+                    //        {
+                    //            item.Value.DrawPosition.Offset(TileDrawOffset.X, TileDrawOffset.Y);
+                    //        }
+                    //        TileDrawOffset = new PointInt(0, 0);
+                    //    }
+
+                    //}
 
 
-
-                    lstWantToLoad.ForEach(a => { TileManager.Singleton.LoadTile(a); });
-
-                    //_lastTilesRect = tilesRect;
-                    //TileDrawOffset = new PointInt(0,0);
-
-                    if (TilesUpdateComplete != null)
-                    {
-                        TilesUpdateComplete(DicDrawTile);
-                    }
                 }
             }
             finally
@@ -468,6 +485,12 @@ namespace BMap.Core
                 IsTilesUpdating = false;
                 TilesUpdateLock.ReleaseWriterLock();
             }
+
+
+            
+           
+            
+            
         }
 
         private bool _isNeedToUpdateTiles = false;

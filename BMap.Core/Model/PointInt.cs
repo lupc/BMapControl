@@ -32,6 +32,7 @@ namespace BMap.Core.Model
         {
             return (int)(X ^ Y);
         }
+        
 
         public override bool Equals(object obj)
         {
@@ -54,6 +55,12 @@ namespace BMap.Core.Model
         public PointInt GetOffSet(int w, int h)
         {
             return new PointInt(this.X + w, this.Y + h);
+        }
+
+        internal void Offset(int x, int y)
+        {
+            this.X += x;
+            this.Y += y;
         }
     }
 }
